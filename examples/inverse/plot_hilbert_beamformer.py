@@ -213,7 +213,6 @@ for ii, (band, fmin, fmax) in enumerate(iter_freqs):
 
     # 6. compute intertrial coherence
     itcs.append(compute_source_itc(stcs))
-    breakpoint()
 
     # 7. compute Hilbert envelope
     for stc in stcs:
