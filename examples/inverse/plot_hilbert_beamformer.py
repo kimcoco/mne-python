@@ -30,6 +30,8 @@ import matplotlib.pyplot as plt
 from nilearn.plotting import plot_stat_map
 from nilearn.image import index_img
 
+import warnings
+
 print(__doc__)
 
 ###############################################################################
@@ -64,10 +66,12 @@ baseline = (-.2, -0.05)
 # Load raw data and head-MRI transform
 # ------------------------------------
 
-raw = read_raw_bids(bids_path)
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    raw = read_raw_bids(bids_path)
 
-# get the head-MRI transform from JSON file
-transf = get_head_mri_trans(bids_path=bids_path)
+    # get the head-MRI transform from JSON file
+    transf = get_head_mri_trans(bids_path=bids_path)
 
 ###############################################################################
 # Compute or load forward solution
@@ -120,10 +124,10 @@ def compute_source_itc(stcs):
 # activity. We will look at somatosensory beta and gamma activity here and
 # define three specific frequency bands: the beta band and two gamma bands:
 
+# this would be a container to use for several freq bands.
+# further below, we show, how you would loop over them.
 iter_freqs = [
         ('Beta', 18, 28),  # keep transition width in mind
-        ('Gamma I', 60, 75),
-        ('Gamma II', 75, 90)
 ]
 
 ###############################################################################
@@ -156,7 +160,8 @@ iter_freqs = [
 hilbert_stcs = []  # hilbert envelope across freq bands
 itcs = []  # ITC across freq bands
 
-# loop over freq bands:
+# loop over freq bands (this kind of loop would run, if several freq bands were
+# defined above):
 for ii, (band, fmin, fmax) in enumerate(iter_freqs):
 
     # print message to keep track:
@@ -164,7 +169,9 @@ for ii, (band, fmin, fmax) in enumerate(iter_freqs):
           % (ii+1, len(iter_freqs), band))
 
     # we filter the data below, so we need to reload
-    raw = read_raw_bids(bids_path, extra_params=dict(preload=True))
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        raw = read_raw_bids(bids_path, extra_params=dict(preload=True))
 
     # pick channels from raw
     raw.pick_types(meg=True)
@@ -206,11 +213,14 @@ for ii, (band, fmin, fmax) in enumerate(iter_freqs):
 
     # 6. compute intertrial coherence
     itcs.append(compute_source_itc(stcs))
+    breakpoint()
 
     # 7. compute Hilbert envelope
     for stc in stcs:
         stc.data[:, :] = np.abs(stc.data)
-        stc.data = np.array(stc.data, 'float64')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            stc.data = np.array(stc.data, 'float64')
 
     hilbert_stcs.append(stcs)
 
